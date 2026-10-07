@@ -42,7 +42,7 @@ class ReservasController extends Controller
 
             if (
                 json_last_error() !== JSON_ERROR_NONE ||
-                !is_array($corpo) || $corpo !== []
+                !is_array($corpo) || $corpo === []
             ) {
                 return response()->json([
                     'sucesso' => false,
@@ -59,6 +59,27 @@ class ReservasController extends Controller
                 ], 404);
             }
 
+            $dataRetirada = $request->input('data_retirada');
+            $dataDevolucao = $request->input('data_devolucao');
+
+            $diferencaDias = Carbon::parse($dataDevolucao)->diffInDays($dataRetirada);
+
+            if ($diferencaDias > 7) {
+                return response()->json([
+                    'sucesso' => false,
+                    'mensagem' => 'O prazo máximo é de 7 dias'
+                ], 422);
+            }
+
+            $aberturaMaiorQueConclusao = Carbon::parse($dataRetirada)->greaterThan($dataDevolucao);
+
+            if ($aberturaMaiorQueConclusao) {
+                return response()->json([
+                    'sucesso' => false,
+                    'mensagem' => 'Período inválido, a data de retirada deve ser menor que a data de devolução'
+                ], 422);
+            }
+
             if ($request->input('quantidade') <= 0) {
                 return response()->json([
                     'sucesso' => false,
@@ -73,10 +94,22 @@ class ReservasController extends Controller
                 ], 422);
             }
 
+            $reservados = Reservas::where('equipamento_id', $equipamento->id)
+            ->where('data_retirada', '<', $dataDevolucao)
+            ->where('data_devolucao', '>', $dataRetirada)
+            ->sum('quantidade');
+
+            $disponivel = $equipamento->estoque - $reservados;
+
+            if($request->input('quantidade') > $disponivel){
+                return response()->json([
+                    'sucesso' => false,
+                    'mensagem' => 'Estoque insuficiente no período, disponível: ' . $disponivel
+                ], 409);
+            }
+
 
             $criar = Reservas::create($dadosValidados);
-            $estoqueNovo = $equipamento->estoque - $request->input('quantidade');
-            $equipamento->update(['estoque' => $estoqueNovo]);
 
             return response()->json([
                 'sucesso' => true,
