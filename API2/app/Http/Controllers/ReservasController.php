@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Equipamentos;
 use App\Models\Reservas;
+use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Laravel\Lumen\Routing\Controller;
@@ -15,9 +17,17 @@ class ReservasController extends Controller
         $reservas = [];
         if (!empty($equipamentoId)) {
             $reservas = Reservas::where('equipamento_id', $equipamentoId)->get();
+            if (empty($reserva)) {
+                return response()->json([
+                    'sucesso' => false,
+                    'mensagem' => 'Reserva não encontrada pelo equipamento'
+                ], 404);
+            }
         } else {
             $reservas = Reservas::all();
         }
+
+
 
         return response()->json([
             'sucesso' => true,
@@ -29,12 +39,38 @@ class ReservasController extends Controller
     {
         try {
             $dadosValidados = $this->validate($request, Reservas::regras(), Reservas::mensagens());
+            $equipamento = Equipamentos::where('id', $request->input('equipamento_id'))->first();
+
+            if (empty($equipamento)) {
+                return response()->json([
+                    'sucesso' => false,
+                    'mensagem' => 'Equipamento não encontrado'
+                ], 404);
+            }
+
+            if ($request->input('quantidade') <= 0) {
+                return response()->json([
+                    'sucesso' => false,
+                    'mensagem' => 'Quantidade inválida'
+                ], 422);
+            }
+
+            if ($request->input('quantidade') > $equipamento->estoque) {
+                return response()->json([
+                    'sucesso' => false,
+                    'mensagem' => 'Não há estoque disponível para esse equipamento'
+                ], 422);
+            }
+
 
             $criar = Reservas::create($dadosValidados);
+            $estoqueNovo = $equipamento->estoque - $request->input('quantidade');
+            $equipamento->update(['estoque' => $estoqueNovo]);
 
             return response()->json([
                 'sucesso' => true,
-                'mensagem' => 'Reserva criada com sucesso'
+                'mensagem' => 'Reserva criada com sucesso',
+                'dados' => $criar
             ], 201);
         } catch (QueryException $e) {
             return response()->json([
