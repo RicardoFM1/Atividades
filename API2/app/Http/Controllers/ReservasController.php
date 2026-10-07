@@ -17,7 +17,7 @@ class ReservasController extends Controller
         $reservas = [];
         if (!empty($equipamentoId)) {
             $reservas = Reservas::where('equipamento_id', $equipamentoId)->get();
-            if (empty($reserva)) {
+            if (empty($reservas)) {
                 return response()->json([
                     'sucesso' => false,
                     'mensagem' => 'Reserva não encontrada pelo equipamento'
@@ -38,9 +38,20 @@ class ReservasController extends Controller
     public function criarReserva(Request $request)
     {
         try {
+            $corpo = json_decode($request->getContent(), true);
+
+            if (
+                json_last_error() !== JSON_ERROR_NONE ||
+                !is_array($corpo) || $corpo !== []
+            ) {
+                return response()->json([
+                    'sucesso' => false,
+                    'mensagem' => 'JSON inválido'
+                ], 400);
+            }
+
             $dadosValidados = $this->validate($request, Reservas::regras(), Reservas::mensagens());
             $equipamento = Equipamentos::where('id', $request->input('equipamento_id'))->first();
-
             if (empty($equipamento)) {
                 return response()->json([
                     'sucesso' => false,
