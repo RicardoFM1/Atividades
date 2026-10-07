@@ -6,6 +6,7 @@ use App\Models\Contas;
 use App\Models\Sessoes;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
 use Laravel\Lumen\Routing\Controller;
 
 class LoginController extends Controller
@@ -29,7 +30,9 @@ class LoginController extends Controller
             ], 404);
         }
 
-        setcookie('sessao', $sessao->codigo);
+        setcookie('sessao', $sessao->id);
+
+        
 
         return response()->json([
             'sucesso' => true,
@@ -79,7 +82,7 @@ class LoginController extends Controller
             ], 404);
         }
 
-        if (empty($sessao)) {
+        if (empty($cookie)) {
             redirect('/login');
             return response()->json([
                 'sucesso' => false,
@@ -87,12 +90,7 @@ class LoginController extends Controller
             ], 401);
         }
 
-        return response()->json([
-            'sucesso' => true,
-            'mensagem' => 'Acesso liberado para o painel',
-            'numero_operador' => $sessaoOperador->numero
-        ], 200);
+        return '<h1>Acesso Liberado</h1<br></br>
+                <p>Operador:</p>' . $sessaoOperador->numero;
     }
-
-   
 }
