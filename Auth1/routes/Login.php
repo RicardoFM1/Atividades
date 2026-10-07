@@ -4,5 +4,8 @@
 
 
 $router->group(['prefix' => '/login'], function () use ($router) {
-    $router->get('', 'LoginController@retornarCredencial');
+    $router->get('', 'LoginController@enviarCredencial');
+    $router->post('/{numero}', 'LoginController@loginPorCredencial');
 });
+
+$router->get('/painel', 'LoginController@painel');

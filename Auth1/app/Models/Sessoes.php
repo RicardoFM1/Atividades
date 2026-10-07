@@ -12,6 +12,7 @@ class Sessoes extends Model
 
 
     public $fillable = [
+        'id',
         'tipo',
         'numero',
         'conta_id'
