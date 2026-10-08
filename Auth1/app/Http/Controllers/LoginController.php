@@ -101,6 +101,8 @@ class LoginController extends Controller
 
     public function logout()
     {
-        setcookie('sessao', '', time() - 3600);
+        setcookie('sessao', 'sessao', 1);
+
+    // Deletar a sesssao no banco.
     }
 }

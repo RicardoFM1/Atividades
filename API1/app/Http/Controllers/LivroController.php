@@ -18,26 +18,23 @@ class LivroController extends Controller
         $pagina = $request->query('pagina');
 
         if (empty(intval($pagina)) || $pagina === null) {
-           
 
-                $livros = Livros::orderBy('titulo', 'DESC')->get();
+            $livros = Livros::orderBy('titulo', 'asc')->get();
         }
 
         if (!empty($pagina) || $pagina !== null) {
 
             if (empty($titulo) && empty($autor) && empty($categoria)) {
 
-                if (intval($pagina) <= 0) {
+                if (intval($pagina) <= 0 || !ctype_digit($pagina)) {
                     return response()->json([
                         'sucesso' => false,
                         'mensagem' => 'Página inválida'
                     ], 422);
                 }
-                if (intval($pagina) === 1) {
-                    $livros = Livros::offset(0)->limit(8)->get();
-                } else {
-                    $livros = Livros::offset($pagina)->limit(8)->get();
-                }
+
+
+                $livros = Livros::offset(($pagina - 1) * 8)->limit(8)->get();
                 $livrosTotais = Livros::all();
             }
         }
