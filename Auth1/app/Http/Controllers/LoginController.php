@@ -30,9 +30,16 @@ class LoginController extends Controller
             ], 404);
         }
 
-        setcookie('sessao', $sessao->id);
+        $opcoesCookie = [
+            'expires' => time() + strtotime('+1 day'),
+            'path' => '/',
+            'domain' => '',
+            'secure' => true,
+            'httponly' => true,
+            'samesite' => 'lax'
+        ];
 
-        
+        setcookie('sessao', $sessao->id, $opcoesCookie);
 
         return response()->json([
             'sucesso' => true,
@@ -52,12 +59,9 @@ class LoginController extends Controller
                 'tipo' => 'cracha',
                 'numero' => $numero
             ]);
-
-            redirect('/painel');
             return response()->json([
                 'sucesso' => true,
                 'mensagem' => 'Logado com sucesso pela credencial',
-                'cookie' => htmlspecialchars($_COOKIE['sessao'])
             ], 200);
         } catch (QueryException $e) {
             return response()->json([
@@ -69,28 +73,34 @@ class LoginController extends Controller
 
     public function painel()
     {
+        if (isset($_COOKIE['sessao'])) {
 
-        $cookie = htmlspecialchars($_COOKIE['sessao']);
+            $cookie = htmlspecialchars($_COOKIE['sessao']);
 
-        $sessaoOperador = Sessoes::where('id', $cookie)->first();
+            $sessaoOperador = Sessoes::where('id', $cookie)->first();
 
-        if (empty($sessaoOperador)) {
-            return response()->json([
-                'sucesso' => false,
-                'mensagem' => 'Sessão não encontrada',
-                'cookie' => $cookie
-            ], 404);
-        }
+            if (empty($sessaoOperador)) {
+                return response()->json([
+                    'sucesso' => false,
+                    'mensagem' => 'Sessão não encontrada',
+                    'cookie' => $cookie
+                ], 404);
+            }
 
-        if (empty($cookie)) {
-            redirect('/login');
+
+
+            return '<h1>Acesso Liberado</h1<br></br>
+                            <p>Operador:</p>' . $sessaoOperador->numero;
+        } else {
             return response()->json([
                 'sucesso' => false,
                 'mensagem' => 'Sem sessão'
             ], 401);
         }
+    }
 
-        return '<h1>Acesso Liberado</h1<br></br>
-                <p>Operador:</p>' . $sessaoOperador->numero;
+    public function logout()
+    {
+        setcookie('sessao', '', time() - 3600);
     }
 }
